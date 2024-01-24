@@ -1,0 +1,52 @@
+version: "3.5"
+
+services:
+  db:
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    image: "postgres:13"
+    networks:
+      - mrweatherbee
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres@db/mrweatherbee_development
+      TEST_DATABASE_URL: postgres://postgres@db/mrweatherbee_test
+      ALGOLIA_APPLICATION_ID:
+      ALGOLIA_API_KEY:
+      ALGOLIA_INDEX_PREFIX:
+    networks:
+      - mrweatherbee
+    volumes:
+      - .:/usr/src/app
+      # Avoid leftover server.pid files when container exits.
+      # https://auth0.com/blog/ruby-on-rails-killer-workflow-with-docker-part-1/
+      - type: tmpfs
+        target: /usr/src/app/tmp/pids
+    command: go run main.go --port=8080 --binding=0.0.0.0
+    ports:
+      - "8080:8080"
+
+        #  postman:
+        #    build:
+        #      context: .
+        #      dockerfile: Dockerfile.dev.postman
+        #    command: sh -c 'sleep 3 && curl -v http://api:3000/resources?category_id=1 >/dev/null && newman run postman/AskDarcel%20API.postman_collection.json -e postman/docker.postman_environment.json -g postman/globals.postman_globals.json && newman run postman/AskDarcel%20Admin%20API.postman_collection.json -e postman/docker.postman_environment.json -g postman/globals.postman_globals.json'
+        #    depends_on:
+        #      - api
+        #    networks:
+        #      - askdarcel
+        #    volumes:
+        #      - .:/usr/src/app
+
+networks:
+  # Used to connect to askdarcel-web in a different docker-compose instance
+  mrweatherbee:
+    name: mrweatherbee

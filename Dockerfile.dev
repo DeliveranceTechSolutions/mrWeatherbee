@@ -1,0 +1,47 @@
+# Stage 1: Build Stage
+FROM golang:1.17-buster AS build
+WORKDIR /app
+
+# Copy go.mod and go.sum to download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the entire source code
+COPY . .
+
+# Build the Go application
+RUN CGO_ENABLED=0 GOOS=linux go build -o myapp .
+
+# Stage 2: Final Stage
+FROM alpine:latest
+WORKDIR /app
+
+# Copy only the compiled binary from the build stage
+COPY --from=build /app/myapp .
+
+# Set environment variables if needed
+# ENV KEY=VALUE
+
+# Expose any necessary ports
+# EXPOSE 8080
+
+# Command to run the application
+CMD ["./myapp"]
+
+FROM golang:1.18-buster
+
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main' > /etc/apt/sources.list.d/pgdg.list && \
+   wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+   apt-get update && \
+   apt-get install -y postgresql-client-13 && \
+   apt-get install -y vim && \
+   rm -rf /var/lib/apt/lists/*
+# throw errors if Gemfile has been modified since Gemfile.lock
+RUN bundle config --global frozen 1
+
+WORKDIR /usr/src/app
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+COPY . .
