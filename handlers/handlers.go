@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/deliveranceTechSolutions/mrWeatherbee/service"
+	"github.com/deliveranceTechSolutions/mrWeatherbee/service/location"
 )
 
 func LandingViewHandler(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
-	location := service.NewCore()
-	fmt.Println(location)
+	local := location.NewCore("WA")
+
+	fmt.Println(local.Coordinates)
 	path := filepath.Join("..", "static", "html", "index.html")
 	http.ServeFile(w, r, path)
 }
